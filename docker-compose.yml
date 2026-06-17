@@ -1,0 +1,25 @@
+# Kombinasi 1 — Co-located: harness CLI-Anything di dalam container Blender.
+# UI web Selkies di https://<host>:3040/ ; Claude orkestrasi via `docker exec`.
+services:
+  blender:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: blender-agent:latest
+    container_name: blender
+    # --- Port UI: 3040 (HTTPS Selkies) ---
+    ports:
+      - "3040:3040"
+    environment:
+      # ID user/group host agar file di /config tidak jadi milik root
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Jakarta
+      # Pastikan port internal UI = 3040 (cocok dengan Dockerfile)
+      - CUSTOM_HTTPS_PORT=3040
+    volumes:
+      # State persisten: scene JSON, preview bundle, output render
+      - ./config:/config
+    # Disarankan maintainer image linuxserver untuk semua desktop image
+    shm_size: "1gb"
+    restart: unless-stopped
