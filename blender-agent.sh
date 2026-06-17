@@ -14,6 +14,7 @@
 #   ./blender-agent.sh new   <scene.json>
 #   ./blender-agent.sh build <scene.json>   <perintah via stdin/heredoc>
 #   ./blender-agent.sh render <scene.json> <out.png>
+#   ./blender-agent.sh blend <scene.json> <out.blend>   # buat .blend (tanpa render)
 #   ./blender-agent.sh cli   <args...>      # passthrough ke cli-anything-blender
 set -euo pipefail
 
@@ -55,6 +56,25 @@ case "$cmd" in
     # 3) render headless nyata (CPU; warning EGL di VPS tanpa GPU itu non-fatal)
     dexec blender --background --python "$script"
     echo "→ output: $out (di volume /config)"
+    ;;
+
+  blend)
+    # Buat .blend yang bisa dibuka di Blender UI — TANPA render.
+    # Script harness membangun scene lalu merender; kita potong di penanda
+    # "# ── Render Output ─" (scene sudah lengkap di atasnya) lalu sisipkan
+    # save_as_mainfile. Output .blend mendarat di volume /config.
+    proj="${1:?Usage: blend <scene.json> <out.blend>}"
+    out="${2:?Usage: blend <scene.json> <out.blend>}"
+    stub="$(dirname "$out")/.blend_stub.png"   # render execute hanya generate script
+    script="$(dirname "$stub")/_render_script.py"
+    dexec cli-anything-blender --json --project "$proj" \
+      render execute "$stub" --overwrite >/dev/null
+    docker exec -u "$RUN_USER" -e B_SCRIPT="$script" -e B_OUT="$out" "$CONTAINER" bash -lc '
+      awk "/Render Output/{exit} {print}" "$B_SCRIPT" > /tmp/to_blend.py
+      sed -i "s/BLENDER_EEVEE_NEXT/BLENDER_EEVEE/g" /tmp/to_blend.py
+      printf "\nimport bpy\nbpy.ops.wm.save_as_mainfile(filepath=r\"%s\")\nprint(\"SAVED_BLEND\", \"%s\")\n" "$B_OUT" "$B_OUT" >> /tmp/to_blend.py
+      blender --background --python /tmp/to_blend.py'
+    echo "→ blend: $out (buka di Blender UI: File ▸ Open ▸ Home/$out)"
     ;;
 
   cli)

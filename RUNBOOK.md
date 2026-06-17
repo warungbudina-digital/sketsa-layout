@@ -51,6 +51,7 @@ ls -la config/out.png      # owner = user host, bukan root
 | Scene baru | `./blender-agent.sh new /config/<nama>.json` |
 | Bangun + simpan (REPL) | `./blender-agent.sh build /config/<nama>.json <<'EOF' … EOF` |
 | Render headless CPU | `./blender-agent.sh render /config/<nama>.json /config/<out>.png` |
+| Buat `.blend` (buka di Blender UI, tanpa render) | `./blender-agent.sh blend /config/<nama>.json /config/<out>.blend` |
 | Perintah harness apa pun | `./blender-agent.sh cli --json --project /config/<nama>.json object list` |
 | Perbaiki owner file | `./blender-agent.sh fix-perms` |
 
@@ -58,6 +59,10 @@ Aturan emas (lihat NOTES §gotcha): `new` **tanpa** `--project`; mutasi **harus*
 `build` (REPL+`scene save`); `render` sudah otomatis generate script + patch EEVEE + jalankan Blender.
 
 Engine tanpa GPU: **WORKBENCH** untuk preview kilat, **CYCLES** sample rendah untuk final.
+
+`.png` = hasil render (gambar 2D, tak bisa dibuka sebagai scene). Untuk membuka/mengedit
+di viewport Blender UI, buat `.blend` dulu (`blend`), lalu File ▸ Open di desktop Selkies.
+Harness tidak pernah membuat `.blend` otomatis (state-nya JSON + script `bpy`).
 
 ---
 
