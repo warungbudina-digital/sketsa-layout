@@ -1,5 +1,6 @@
 # Kombinasi 1 — Co-located: harness CLI-Anything di dalam container Blender.
 # UI web Selkies di https://<host>:3040/ ; Claude orkestrasi via `docker exec`.
+# Akses publik via cloudflared tunnel (tanpa membuka port di VPS) — lihat RUNBOOK §F.
 services:
   blender:
     build:
@@ -8,6 +9,8 @@ services:
     image: blender-agent:latest
     container_name: blender
     # --- Port UI: 3040 (HTTPS Selkies) ---
+    # Opsional saat pakai cloudflared (akses lewat domain, bukan IP:port).
+    # Boleh dihapus bila VPS tak ingin mengekspos port publik sama sekali.
     ports:
       - "3040:3040"
     environment:
@@ -22,4 +25,19 @@ services:
       - ./config:/config
     # Disarankan maintainer image linuxserver untuk semua desktop image
     shm_size: "1gb"
+    restart: unless-stopped
+
+  # --- Akses publik via domain tanpa membuka port di VPS (port 443 terblokir OK) ---
+  # cloudflared OUTBOUND-only: tidak bind port inbound apa pun -> tidak bentrok.
+  # TLS publik diterminasi di edge Cloudflare. Origin Selkies = HTTPS self-signed,
+  # jadi di dashboard Cloudflare set service: https://blender:3040 + "No TLS Verify".
+  # (DNS `blender` di-resolve via network compose; WebSocket Selkies didukung tunnel.)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:?Set TUNNEL_TOKEN di file .env (token tunnel dari Cloudflare Zero Trust)}
+    depends_on:
+      - blender
     restart: unless-stopped

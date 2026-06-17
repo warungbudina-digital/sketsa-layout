@@ -100,6 +100,32 @@ Untuk render berat, pindahkan langkah render ke GPU gratis Colab. Host tetap di 
 
 ---
 
+## F. Akses UI publik via cloudflared (port 443 terblokir / Cloud Shell)
+
+cloudflared **outbound-only** → tidak membuka port di VPS, **tidak bentrok**. TLS publik
+diterminasi di edge Cloudflare; VPS tak perlu port 443. Origin Selkies HTTPS self-signed,
+jadi origin diset `https://...` + **No TLS Verify**.
+
+1. **Cloudflare Zero Trust** ▸ Networks ▸ Tunnels ▸ *Create a tunnel* (Cloudflared) →
+   salin **token** dari perintah `run --token <TOKEN>`.
+2. **Public Hostname** untuk tunnel itu:
+   - Subdomain/domain: mis. `blender.domainmu.com`
+   - Service **Type: `HTTPS`**, **URL: `blender:3040`** (nama service compose)
+   - *Additional application settings ▸ TLS ▸* **No TLS Verify = ON** (cert self-signed)
+3. **Di repo**: `cp .env.example .env` lalu isi `TUNNEL_TOKEN=...`
+4. Jalankan: `docker compose up -d` (service `cloudflared` ikut naik).
+5. Buka **`https://blender.domainmu.com`** — HTTPS valid dari Cloudflare, tanpa warning cert.
+
+```bash
+docker compose logs -f cloudflared      # cari "Registered tunnel connection"
+```
+
+Catatan:
+- Selkies streaming berbasis **WebSocket** → didukung penuh oleh Cloudflare tunnel.
+- Karena akses lewat domain, mapping `ports: 3040:3040` di compose jadi **opsional** —
+  boleh dihapus agar VPS tak mengekspos port publik sama sekali.
+- `.env` berisi rahasia dan **tidak** di-commit (sudah di `.gitignore`).
+
 ## E. Maintenance
 
 ```bash
