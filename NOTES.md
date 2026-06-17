@@ -10,6 +10,9 @@ linuxserver supaya `shutil.which("blender")` selalu menemukan binary.
 - **UI**: Selkies web di `https://<host>:3040/` (`CUSTOM_HTTPS_PORT=3040`).
 - **State**: volume `./config` → `/config` (scene JSON, preview, output render).
 
+> Panduan operasional langkah-demi-langkah: **[`RUNBOOK.md`](RUNBOOK.md)**.
+> Worker render GPU hybrid: **[`colab_blender_gpu_hybrid.ipynb`](colab_blender_gpu_hybrid.ipynb)**.
+
 ## Build & jalan
 
 ```bash
